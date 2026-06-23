@@ -1,0 +1,149 @@
+<?php
+
+namespace sisClientes\Http\Controllers;
+
+use Illuminate\Http\Request;
+use sisClientes\Http\Requests;
+
+use Iluminate\Support\Facades\Redirect;
+use Iluminate\Supporte\Facates\Input;
+use sisClientes\Http\Requests\ClienteFormRequest;
+use sisClientes\Cliente;
+use sisClientes\Gestion;
+use DB;
+use Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
+use Response;
+use Iluminate\Support\Collection;
+
+class ClienteController extends Controller
+{
+    
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    public function index(Request $request)
+    {
+        if ($request)
+        {
+            $responsable=Auth::user()->name;
+            $arr = explode(" ", $responsable, 2);
+            $resp = $arr[0];
+
+            /*
+
+            // Usar para debuggear, insertar la variable  encontrar errores
+            DB::table('tmp_data')->insert (
+                ['data'=> $resp]
+            );
+            */
+            $query=trim($request->get('searchText'));
+            $query2=trim($request->get('cuenta'));
+            
+            $name=trim($request->get('usuario'));
+            $desasignado ='1';
+            $clientes=DB::table('cliente')
+            ->where('nombre','LIKE','%'.$query.'%')
+            ->where('cuenta','LIKE','%'.$query2.'%')
+            //->where ('responsable','=',$resp)
+            ->where('responsable','LIKE',$resp.'%')
+			->where ('desasignado','=',null)
+            ->orderBy('prioridad','asc')
+            ->orderBy('fechaPromesa','asc')
+            ->orderBy('horaRecordatorio','asc')
+            ->orderBy('ultGestion','asc')
+            ->paginate(50);
+            return view('cliente.consulta.index',["clientes"=>$clientes,"searchText"=>$query,"cuenta"=>$query2]);
+        }
+    }
+
+    public function clientes(Request $request)
+    {
+        if ($request)
+        {
+
+
+            $query=trim($request->get('searchText'));
+            $query2=trim($request->get('cuenta'));
+            if ($query ==null)
+            {
+                $search = 'Ingrese nombre';
+               
+            }else 
+            {$search =$query;
+            }
+
+            if ($query2 ==null)
+            {
+                $search2 = 0;
+               
+            }else 
+            {$search2 =$query2;
+            }
+
+            $name=trim($request->get('usuario'));
+            $clientes=DB::table('cliente')
+            
+			->where('nombre','LIKE','%'.$search.'%')
+			->orwhere('cuenta','=',$query2)
+			
+//             ->where ('responsable','=',$resp)
+//            ->orderBy('fechaIngreso','desc')
+            ->orderBy('prioridad','asc')
+            
+            ->paginate(50);
+            return view('cliente.general.index',["clientes"=>$clientes,"searchText"=>$query,"cuenta"=>$query2]);
+        }
+    }   
+    public function show($id)
+    {
+
+        // Objeto Gestion
+        $gestion=DB::table('gestion as g ')
+        ->join('tipificacion as t','g.idTipif','=','t.id_Tipif')
+        ->join('cliente as c','g.idCliente','=','c.id')
+        ->select('g.idGestion','g.fecha','t.descripcion','g.observacion','g.fechaPromesa','g.horaRecordatorio','g.userIngreso')
+        ->where('g.idCliente','=',$id)
+		->whereIn('t.esPromesa',['N','S'])
+       ->orderBy('g.idGestion','desc')
+        ->get();
+
+        $tipificaciones=DB::table('tipificacion')->where('estado','=','1')
+        ->where('esPromesa','=','N')->get();
+        $tipificacionesprom=DB::table('tipificacion')->where('esPromesa','=','S')->where('estado','=','1')->get();
+        $tipificacionesrec=DB::table('tipificacion')->where('esPromesa','=','R')->get();
+
+        return view("cliente.consulta.details",["cliente"=>Cliente::findOrFail($id),"gestion"=>$gestion,
+        "tipificaciones"=>$tipificaciones,"tipificacionesprom"=>$tipificacionesprom,"tipificacionesrec"=>$tipificacionesrec
+        ]);
+    }
+
+
+    public function export_clientes (){
+        // Pendiente agregar la fecha 
+        $mytime=Carbon::now()->toDateTimeString();
+        
+
+        Excel::create('Cartera_gestor'.$mytime,function($excel){
+            $excel->sheet('My Cartera',function($sheet){
+                $responsable=Auth::user()->name;
+                $arr = explode(" ", $responsable, 2);
+                $resp = $arr[0];    
+                $cuentas=DB::table('cliente as cl')
+                ->join('clasificacion_cartera as cc','cl.prioridad','=','cc.id')
+                ->select('cl.cuenta as cuenta','cl.nombre as Nombres','cc.descripcion AS clasificacion')
+               //  ->where('cl.responsable','=',$resp)
+				->where('cl.responsable','LIKE',$resp.'%')
+                ->orderBy('cl.prioridad','asc')
+                ->get();
+
+            $cuentas= json_decode( json_encode($cuentas), true);
+            $sheet->fromArray($cuentas);                   
+            });    
+        
+        })->export('xls');
+    }
+
+}
