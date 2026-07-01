@@ -1,66 +1,55 @@
-@extends('layouts.app')
+@extends('layouts.auth')
 
 @section('content')
-<div class="container">
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-            <div class="panel panel-success">
-                <div class="panel-heading text-center bg-dark">Inicio de Sesión</div>
-                <div class="panel-body" >
-                    <form class="form-horizontal" role="form" method="POST" action="{{ url('/login') }}">
-                        {{ csrf_field() }}
-
-                        <div class="form-group{{ $errors->has('email') ? ' has-error' : '' }}">
-                            
-                            <label for="email" class="col-md-4 control-label">Usuario</label>
-
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control" name="email" value="{{ old('email') }}">
-
-                                @if ($errors->has('email'))
-                                    <span class="help-block">
-                                        <strong>{{ $errors->first('email') }}</strong>
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-
-                        <div class="form-group{{ $errors->has('password') ? ' has-error' : '' }}">
-                            <label for="password" class="col-md-4 control-label">Contraseña</label>
-
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control" name="password">
-
-                                @if ($errors->has('password'))
-                                    <span class="help-block">
-                                        <strong>{{ $errors->first('password') }}</strong>
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="col-md-6 col-md-offset-4">
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="remember"> Recordarme
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="col-md-6 col-md-offset-4">
-                                <button type="submit" class="btn btn-success center-block">
-                                    <i class="fa fa-btn fa-check-circle"></i> Acceder
-                                </button>
-
-                          <!--      <a class="btn btn-link" href="{{ url('/password/reset') }}">Forgot Your Password?</a> -->
-                            </div>
-                        </div>
-                    </form>
+<div class="auth-page">
+    <div>
+        <div class="auth-card">
+            <div class="auth-brand">
+                <div class="auth-icon">
+                    <i class="fa fa-lock"></i>
                 </div>
+                <h1>GLB COLLECTION</h1>
+                <p>Inicio de Sesión</p>
             </div>
+
+            <form class="auth-form" method="POST" action="{{ url('/login') }}">
+                {{ csrf_field() }}
+
+                <div class="form-group{{ $errors->has('email') ? ' has-error' : '' }}">
+                    <label for="email">Usuario</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
+                        <input id="email" type="email" class="form-control" name="email" value="{{ old('email') }}" autofocus>
+                    </div>
+                    @if ($errors->has('email'))
+                        <span class="help-block">{{ $errors->first('email') }}</span>
+                    @endif
+                </div>
+
+                <div class="form-group{{ $errors->has('password') ? ' has-error' : '' }}">
+                    <label for="password">Contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-key"></i></span>
+                        <input id="password" type="password" class="form-control" name="password">
+                    </div>
+                    @if ($errors->has('password'))
+                        <span class="help-block">{{ $errors->first('password') }}</span>
+                    @endif
+                </div>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Recordarme</label>
+                </div>
+
+                <button type="submit" class="auth-submit">
+                    <i class="fa fa-sign-in"></i>Acceder
+                </button>
+            </form>
+        </div>
+
+        <div class="auth-footer">
+            &copy; {{ date('Y') }} GLB COLLECTION
         </div>
     </div>
 </div>
